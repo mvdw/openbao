@@ -329,7 +329,7 @@ EOF
 }
 
 main() {
-    # Replace <IP address or URL> with 10.10.0.120
+    # Replace <IP address or URL> with real IP address or URL
     #sed -i 's/<IP address or URL>/XX.XX.XX.XX/g' "$0"
     create_user_and_setup
     install_go
