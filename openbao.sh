@@ -16,11 +16,17 @@ create_user_and_setup() {
         sudo useradd --system --home /var/lib/openbao --shell /bin/bash --user-group openbao
     fi
 
+    # Check if /var/lib/openbao directory exists, if not, create it
+    if [ ! -d /var/lib/openbao ]; then
+        sudo mkdir -p /var/lib/openbao
+        sudo chown openbao:openbao /var/lib/openbao
+    fi
+
     # Ensure .bashrc and .profile are copied from /etc/skel
     for file in .bashrc .profile; do
         if [ ! -f /var/lib/openbao/$file ]; then
-            cp /etc/skel/$file /var/lib/openbao/$file
-            chown openbao:openbao /var/lib/openbao/$file
+            sudo cp /etc/skel/$file /var/lib/openbao/$file
+            sudo chown openbao:openbao /var/lib/openbao/$file
         fi
     done
 }
@@ -29,8 +35,6 @@ install_go() {
     # Step 1: Install Go
     wget https://go.dev/dl/go1.22.4.linux-amd64.tar.gz
     sudo tar -C /usr/local -xzf go1.22.4.linux-amd64.tar.gz
-    sudo mkdir -p /var/lib/openbao
-    sudo touch /var/lib/openbao/.profile
     echo "export PATH=\$PATH:/usr/local/go/bin" | sudo tee -a /var/lib/openbao/.profile
     sudo chown -R openbao:openbao /var/lib/openbao
 }
@@ -313,18 +317,20 @@ Environment=DBUS_SESSION_BUS_ADDRESS=$XDG_RUNTIME_DIR/bus
 WantedBy=multi-user.target
 EOF
 }
-kill_openbao(){
-# Find and kill running OpenBao instances gracefully
-pkill -f openbao
-# Wait for a few seconds to ensure processes are terminated
-sleep 5
+
+kill_openbao() {
+    # Find and kill running OpenBao instances gracefully
+    pkill -f openbao
+    # Wait for a few seconds to ensure processes are terminated
+    sleep 5
 }
-system_services(){
-# Reload systemd and enable services
-sudo systemctl daemon-reload
-sudo systemctl enable openbao-unseal.service
-sudo systemctl enable openbao.service
-sudo systemctl start openbao.service
+
+system_services() {
+    # Reload systemd and enable services
+    sudo systemctl daemon-reload
+    sudo systemctl enable openbao-unseal.service
+    sudo systemctl enable openbao.service
+    sudo systemctl start openbao.service
 }
 
 main() {
