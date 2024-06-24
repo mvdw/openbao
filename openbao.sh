@@ -274,8 +274,8 @@ EOF
 }
 
 create_systemd_services() {
-# Create openbao.service
-cat << 'EOF' | sudo tee /etc/systemd/system/openbao.service
+    # Create openbao.service
+    cat << 'EOF' | sudo tee /etc/systemd/system/openbao.service
 [Unit]
 Description=OpenBao
 Documentation=https://github.com/openbao/openbao
@@ -300,8 +300,8 @@ LimitMEMLOCK=infinity
 WantedBy=multi-user.target
 EOF
 
-# Create openbao-unseal.service
-cat << 'EOF' | sudo tee /etc/systemd/system/openbao-unseal.service
+    # Create openbao-unseal.service
+    cat << 'EOF' | sudo tee /etc/systemd/system/openbao-unseal.service
 [Unit]
 Description=Unseal OpenBao
 After=openbao.service
@@ -324,7 +324,6 @@ kill_openbao() {
     # Wait for a few seconds to ensure processes are terminated
     sleep 5
 }
-
 
 system_services() {
     # Reload systemd and enable services
