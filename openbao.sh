@@ -325,12 +325,36 @@ kill_openbao() {
     sleep 5
 }
 
+
 system_services() {
     # Reload systemd and enable services
+    echo "Reloading systemd daemon..."
     sudo systemctl daemon-reload
+    if [ $? -ne 0 ]; then
+        echo "Failed to reload systemd daemon"
+        exit 1
+    fi
+
+    echo "Enabling openbao-unseal.service..."
     sudo systemctl enable openbao-unseal.service
+    if [ $? -ne 0 ]; then
+        echo "Failed to enable openbao-unseal.service"
+        exit 1
+    fi
+
+    echo "Enabling openbao.service..."
     sudo systemctl enable openbao.service
+    if [ $? -ne 0 ]; then
+        echo "Failed to enable openbao.service"
+        exit 1
+    fi
+
+    echo "Starting openbao.service..."
     sudo systemctl start openbao.service
+    if [ $? -ne 0 ]; then
+        echo "Failed to start openbao.service"
+        exit 1
+    fi
 }
 
 main() {
