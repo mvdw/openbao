@@ -93,14 +93,14 @@ configure_openbao() {
     sudo mkdir -p /var/lib/openbao/config
     cat << 'EOF' | sudo tee /var/lib/openbao/config/config.hcl
 ui = true
-cluster_addr  = "https://<IP address or URL>:8201"
-api_addr      = "https://<IP address or URL>:8200"
+cluster_addr  = "https://10.10.0.126:8201"
+api_addr      = "https://10.10.0.126:8200"
 disable_mlock = true
 storage "file" {
   path = "/var/lib/openbao/data"
 }
 listener "tcp" {
-  address       = "<IP address or URL>:8200"
+  address       = "10.10.0.126:8200"
   tls_cert_file = "/var/lib/openbao/tls/tls.crt"
   tls_key_file  = "/var/lib/openbao/tls/tls.key"
 }
@@ -129,7 +129,7 @@ ST = State
 L  = City
 O  = Organization
 OU = Organizational Unit
-CN = <IP address or URL>
+CN = 10.10.0.126
 
 [req_ext]
 subjectAltName = @alt_names
@@ -139,7 +139,7 @@ subjectAltName = @alt_names
 basicConstraints = critical, CA:true
 
 [alt_names]
-IP.1 = <IP address or URL>
+IP.1 = 10.10.0.126
 EOF
 }
 
@@ -163,7 +163,7 @@ generate_private_key_and_certificate() {
 initialize_and_unseal_openbao() {
     # Step 14: Initialize and unseal OpenBao
     # Create .bashrc for openbao user with VAULT_ADDR
-    sudo -u openbao -H bash -c 'echo "export VAULT_ADDR=\"https://<IP address or URL>:8200\"" >> /var/lib/openbao/.bashrc && source /var/lib/openbao/.bashrc'
+    sudo -u openbao -H bash -c 'echo "export VAULT_ADDR=\"https://10.10.0.126:8200\"" >> /var/lib/openbao/.bashrc && source /var/lib/openbao/.bashrc'
 
     # Step 15: Start OpenBao with the Configuration File
     sudo -u openbao -H bash -c 'source /var/lib/openbao/.bashrc && openbao server -config /var/lib/openbao/config/config.hcl &'
@@ -171,7 +171,7 @@ initialize_and_unseal_openbao() {
     echo "Wait 30 seconds to make sure that the openbao server has time to start "
 
     # Check if OpenBao server is running
-    if ! curl -k https://<IP address or URL>:8200/v1/sys/seal-status; then
+    if ! curl -k https://10.10.0.126:8200/v1/sys/seal-status; then
         echo "OpenBao server is not responding. Please check the logs."
         exit 1
     fi
@@ -208,7 +208,7 @@ create_unseal_script() {
     cat << 'EOF' > /usr/local/bin/unseal_openbao.sh
 #!/bin/bash
 
-export VAULT_ADDR='https://<IP address or URL>:8200'
+export VAULT_ADDR='https://10.10.0.126:8200'
 
 # Create log file if it doesn't exist
 LOGFILE=/var/log/unseal_openbao.log
@@ -223,7 +223,7 @@ fi
 echo "Starting unseal at $(date)" >> $LOGFILE
 
 # Wait for OpenBao to be ready
-while ! curl -k https://<IP address or URL>:8200/v1/sys/seal-status | grep -q '"sealed":true'; do
+while ! curl -k https://10.10.0.126:8200/v1/sys/seal-status | grep -q '"sealed":true'; do
   echo "Waiting for OpenBao to be sealed and ready..." >> $LOGFILE
   sleep 5
 done
@@ -247,7 +247,7 @@ UNSEAL_KEYS_ARRAY=($(echo "$UNSEAL_KEYS"))
 
 # Unseal OpenBao
 for key in "${UNSEAL_KEYS_ARRAY[@]}"; do
-  curl -k --request POST --data "{\"key\": \"$key\"}" https://<IP address or URL>:8200/v1/sys/unseal # >> $LOGFILE 2>&1
+  curl -k --request POST --data "{\"key\": \"$key\"}" https://10.10.0.126:8200/v1/sys/unseal # >> $LOGFILE 2>&1
   #if [ $? -ne 0 ]; then
   #  echo "Failed to unseal with key $key at $(date)" >> $LOGFILE
   #  exit 1
@@ -257,22 +257,21 @@ done
 
 echo "OpenBao unsealed successfully at $(date)" >> $LOGFILE
 EOF
-
-    chmod +x /usr/local/bin/unseal_openbao.sh
+chmod +x /usr/local/bin/unseal_openbao.sh
 }
 
 create_env_file() {
-    # Create environment file for OpenBao
-    sudo mkdir -p /etc/openbao.d
-    cat << 'EOF' | sudo tee /etc/openbao.d/openbao.env
-VAULT_ADDR=https://<IP address or URL>:8200
+# Create environment file for OpenBao
+sudo mkdir -p /etc/openbao.d
+cat << 'EOF' | sudo tee /etc/openbao.d/openbao.env
+VAULT_ADDR=https://10.10.0.126:8200
 DBUS_SESSION_BUS_ADDRESS=$XDG_RUNTIME_DIR/bus
 EOF
 }
 
 create_systemd_services() {
-    # Create openbao.service
-    cat << 'EOF' | sudo tee /etc/systemd/system/openbao.service
+# Create openbao.service
+cat << 'EOF' | sudo tee /etc/systemd/system/openbao.service
 [Unit]
 Description=OpenBao
 Documentation=https://github.com/openbao/openbao
@@ -297,8 +296,8 @@ LimitMEMLOCK=infinity
 WantedBy=multi-user.target
 EOF
 
-    # Create openbao-unseal.service
-    cat << 'EOF' | sudo tee /etc/systemd/system/openbao-unseal.service
+# Create openbao-unseal.service
+cat << 'EOF' | sudo tee /etc/systemd/system/openbao-unseal.service
 [Unit]
 Description=Unseal OpenBao
 After=openbao.service
@@ -307,30 +306,28 @@ Requires=openbao.service
 [Service]
 Type=oneshot
 ExecStart=/usr/local/bin/unseal_openbao.sh
-Environment=VAULT_ADDR=https://<IP address or URL>:8200
+Environment=VAULT_ADDR=https://10.10.0.126:8200
 Environment=DBUS_SESSION_BUS_ADDRESS=$XDG_RUNTIME_DIR/bus
 
 [Install]
 WantedBy=multi-user.target
 EOF
-
-
-    # Find and kill running OpenBao instances gracefully
-    pkill -f openbao
-
-    # Wait for a few seconds to ensure processes are terminated
-    sleep 5
-
-    # Reload systemd and enable services
-    systemctl daemon-reload
-    systemctl enable openbao-unseal.service
-    systemctl enable openbao.service
-    systemctl start openbao.service
+}
+kill_openbao(){
+# Find and kill running OpenBao instances gracefully
+pkill -f openbao
+# Wait for a few seconds to ensure processes are terminated
+sleep 5
+}
+system_services(){
+# Reload systemd and enable services
+sudo systemctl daemon-reload
+sudo systemctl enable openbao-unseal.service
+sudo systemctl enable openbao.service
+sudo systemctl start openbao.service
 }
 
 main() {
-    # Replace <IP address or URL> with real IP address or URL and run it before you will run the script. See eg. below:
-    #sed -i 's|<IP address or URL>|10.10.0.120|g' openbao.sh
     create_user_and_setup
     install_go
     install_dependencies
@@ -343,6 +340,8 @@ main() {
     create_unseal_script
     create_env_file
     create_systemd_services
+    kill_openbao
+    system_services
 }
 
 main "$@"
