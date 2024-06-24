@@ -319,10 +319,16 @@ EOF
 }
 
 kill_openbao() {
-    # Find and kill running OpenBao instances gracefully
-    pkill -f openbao
-    # Wait for a few seconds to ensure processes are terminated
-    sleep 5
+    # Find and kill the openbao server process gracefully
+    PID=$(pgrep -f "openbao server")
+    if [ -n "$PID" ]; then
+        echo "Stopping openbao server with PID $PID"
+        kill $PID
+        # Wait for a few seconds to ensure the process is terminated
+        sleep 5
+    else
+        echo "No openbao server process found"
+    fi
 }
 
 system_services() {
