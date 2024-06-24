@@ -330,7 +330,7 @@ EOF
 
 main() {
     # Replace <IP address or URL> with real IP address or URL and run it before you will run the script. See eg. below:
-    #sed -i 's/\<IP address or URL\>/10.10.0.120/g' openbao.sh
+    #sed -i 's|<IP address or URL>|10.10.0.120|g' openbao.sh
     create_user_and_setup
     install_go
     install_dependencies
