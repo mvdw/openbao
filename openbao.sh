@@ -97,14 +97,14 @@ configure_openbao() {
     sudo mkdir -p /var/lib/openbao/config
     cat << 'EOF' | sudo tee /var/lib/openbao/config/config.hcl
 ui = true
-cluster_addr  = "https://10.10.0.126:8201"
-api_addr      = "https://10.10.0.126:8200"
+cluster_addr  = "https://<IP address or URL>:8201"
+api_addr      = "https://<IP address or URL>:8200"
 disable_mlock = true
 storage "file" {
   path = "/var/lib/openbao/data"
 }
 listener "tcp" {
-  address       = "10.10.0.126:8200"
+  address       = "<IP address or URL>:8200"
   tls_cert_file = "/var/lib/openbao/tls/tls.crt"
   tls_key_file  = "/var/lib/openbao/tls/tls.key"
 }
@@ -133,7 +133,7 @@ ST = State
 L  = City
 O  = Organization
 OU = Organizational Unit
-CN = 10.10.0.126
+CN = <IP address or URL>
 
 [req_ext]
 subjectAltName = @alt_names
@@ -143,7 +143,7 @@ subjectAltName = @alt_names
 basicConstraints = critical, CA:true
 
 [alt_names]
-IP.1 = 10.10.0.126
+IP.1 = <IP address or URL>
 EOF
 }
 
@@ -166,27 +166,31 @@ generate_private_key_and_certificate() {
 
 initialize_and_unseal_openbao() {
     # Step 14: Initialize and unseal OpenBao
-    # Create .bashrc for openbao user with VAULT_ADDR
-    sudo -u openbao -H bash -c 'echo "export VAULT_ADDR=\"https://10.10.0.126:8200\"" >> /var/lib/openbao/.bashrc && source /var/lib/openbao/.bashrc'
+    echo "Exporting VAULT_ADDR..."
+    export VAULT_ADDR="https://<IP address or URL>:8200"
+    echo "VAULT_ADDR is set to $VAULT_ADDR"
 
     # Step 15: Start OpenBao with the Configuration File
-    sudo -u openbao -H bash -c 'source /var/lib/openbao/.bashrc && openbao server -config /var/lib/openbao/config/config.hcl &'
-    sleep 30  # Ensure the server has time to start
-    echo "Wait 30 seconds to make sure that the openbao server has time to start "
+    echo "Starting OpenBao server..."
+    sudo -u openbao -H bash -c 'nohup openbao server -config /var/lib/openbao/config/config.hcl > /var/lib/openbao/openbao.log 2>&1 &' 
+
+    sleep 10  # Ensure the server has time to start
+    echo "Wait 10 seconds to make sure that the openbao server has time to start"
 
     # Check if OpenBao server is running
-    if ! curl -k https://10.10.0.126:8200/v1/sys/seal-status; then
+    if ! curl -sk https://<IP address or URL>:8200/v1/sys/seal-status; then
         echo "OpenBao server is not responding. Please check the logs."
+        sudo -u openbao -H bash -c 'cat /var/lib/openbao/openbao.log'
         exit 1
     fi
 
-    sudo -u openbao -H bash -c 'source /var/lib/openbao/.bashrc && openbao operator init  > /tmp/init_output.txt'
+    echo "Execute command: openbao operator init"
 
-    #cat /tmp/init_output.txt
+    sudo -u openbao -H bash -c 'export VAULT_ADDR="https://<IP address or URL>:8200" && openbao operator init > /tmp/init_output.txt 2>&1'
 
     # Display the initialization output
     INIT_OUTPUT=$(cat /tmp/init_output.txt)
-    UNSEAL_KEYS=$(echo "$INIT_OUTPUT" | grep "Unseal Key" | awk "{print \$NF}")
+    UNSEAL_KEYS=$(echo "$INIT_OUTPUT" | grep "Unseal Key" | awk '{print $NF}')
     echo "$UNSEAL_KEYS" > /tmp/unseal_keys.txt
 
     # Prepare unseal keys for encryption as adrian user
@@ -212,7 +216,7 @@ create_unseal_script() {
     cat << 'EOF' > /usr/local/bin/unseal_openbao.sh
 #!/bin/bash
 
-export VAULT_ADDR='https://10.10.0.126:8200'
+export VAULT_ADDR='https://<IP address or URL>:8200'
 
 # Create log file if it doesn't exist
 LOGFILE=/var/log/unseal_openbao.log
@@ -227,7 +231,7 @@ fi
 echo "Starting unseal at $(date)" >> $LOGFILE
 
 # Wait for OpenBao to be ready
-while ! curl -k https://10.10.0.126:8200/v1/sys/seal-status | grep -q '"sealed":true'; do
+while ! curl -k https://<IP address or URL>:8200/v1/sys/seal-status | grep -q '"sealed":true'; do
   echo "Waiting for OpenBao to be sealed and ready..." >> $LOGFILE
   sleep 5
 done
@@ -251,7 +255,7 @@ UNSEAL_KEYS_ARRAY=($(echo "$UNSEAL_KEYS"))
 
 # Unseal OpenBao
 for key in "${UNSEAL_KEYS_ARRAY[@]}"; do
-  curl -k --request POST --data "{\"key\": \"$key\"}" https://10.10.0.126:8200/v1/sys/unseal # >> $LOGFILE 2>&1
+  curl -k --request POST --data "{\"key\": \"$key\"}" https://<IP address or URL>:8200/v1/sys/unseal # >> $LOGFILE 2>&1
   #if [ $? -ne 0 ]; then
   #  echo "Failed to unseal with key $key at $(date)" >> $LOGFILE
   #  exit 1
@@ -268,7 +272,7 @@ create_env_file() {
 # Create environment file for OpenBao
 sudo mkdir -p /etc/openbao.d
 cat << 'EOF' | sudo tee /etc/openbao.d/openbao.env
-VAULT_ADDR=https://10.10.0.126:8200
+VAULT_ADDR=https://<IP address or URL>:8200
 DBUS_SESSION_BUS_ADDRESS=$XDG_RUNTIME_DIR/bus
 EOF
 }
@@ -310,7 +314,7 @@ Requires=openbao.service
 [Service]
 Type=oneshot
 ExecStart=/usr/local/bin/unseal_openbao.sh
-Environment=VAULT_ADDR=https://10.10.0.126:8200
+Environment=VAULT_ADDR=https://<IP address or URL>:8200
 Environment=DBUS_SESSION_BUS_ADDRESS=$XDG_RUNTIME_DIR/bus
 
 [Install]
