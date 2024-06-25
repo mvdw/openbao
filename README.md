@@ -15,7 +15,9 @@ To automate the installation and configuration of OpenBao, use the provided scri
 5. Clones and builds the OpenBao repository.
 6. Configures OpenBao.
 7. Generates SSL certificates.
-8. Initializes and unseals OpenBao.
+8. Initializes and un
+
+seals OpenBao.
 9. Creates necessary systemd services.
 
 Download and run the script as root:
@@ -48,7 +50,7 @@ The script handles all the steps detailed below. However, if you prefer to under
 
 #### Step 1: Create User and Setup Environment
 
-The script will check if the `openbao` user exists and create it if necessary. It also ensures the environment is properly set up for the `openbao` user.
+The script will check if the `openbao` user exists and create it if necessary. It also ensures the environment is properly set up for the `openbao` user, including copying `.bashrc` and `.profile` from `/etc/skel` if not present.
 
 #### Step 2: Install Go
 
