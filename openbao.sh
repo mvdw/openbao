@@ -197,6 +197,7 @@ initialize_and_unseal_openbao() {
     TOKEN=$(echo "$INIT_OUTPUT" | grep "Initial Root Token" | awk '{print $NF}')
     echo "$TOKEN" > /root/token.txt
     sudo chmod 400 /root/token.txt
+    echo "Your token:"
     sudo cat /root/token.txt
 
     # Prepare unseal keys for encryption as adrian user
