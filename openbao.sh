@@ -193,12 +193,18 @@ initialize_and_unseal_openbao() {
     UNSEAL_KEYS=$(echo "$INIT_OUTPUT" | grep "Unseal Key" | awk '{print $NF}')
     echo "$UNSEAL_KEYS" > /tmp/unseal_keys.txt
 
+    # Extract and save the root token
+    TOKEN=$(echo "$INIT_OUTPUT" | grep "Initial Root Token" | awk '{print $NF}')
+    echo "$TOKEN" > /root/token.txt
+    sudo chmod 400 /root/token.txt
+    sudo cat /root/token.txt
+
     # Prepare unseal keys for encryption as adrian user
     UNSEAL_KEY_1=$(echo "$UNSEAL_KEYS" | sed -n '1p')
     UNSEAL_KEY_2=$(echo "$UNSEAL_KEYS" | sed -n '2p')
     UNSEAL_KEY_3=$(echo "$UNSEAL_KEYS" | sed -n '3p')
     UNSEAL_KEY_4=$(echo "$UNSEAL_KEYS" | sed -n '4p')
-    UNSEAL_KEY_5=$(echo "$UNSEAL_KEYS" | sed -n '5p')    
+    UNSEAL_KEY_5=$(echo "$UNSEAL_KEYS" | sed -n '5p')
 
     # Encrypt the unseal keys
     apt -y install gnupg
