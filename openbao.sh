@@ -48,8 +48,13 @@ install_dependencies() {
 
 install_nvm_node_yarn() {
     # Step 3: Install NVM and Node.js for the openbao user
-    sudo -u openbao -H bash -c 'cd /var/lib/openbao && curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash'
-    sudo -u openbao -H bash -c 'export NVM_DIR="/var/lib/openbao/.nvm" && cd /var/lib/openbao && source $NVM_DIR/nvm.sh && nvm install 22'
+    sudo -u openbao -H bash -c '
+        export NVM_DIR="/var/lib/openbao/.nvm"
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
+        source $NVM_DIR/nvm.sh
+        latest_node=$(nvm ls-remote | grep -Eo "v[0-9]+\.[0-9]+\.[0-9]+" | tail -1)
+        nvm install "$latest_node"
+    '
 
     # Step 4: Install yarn for the openbao user in /var/lib/openbao
     sudo -u openbao -H bash -c 'export NVM_DIR="/var/lib/openbao/.nvm" && cd /var/lib/openbao && source $NVM_DIR/nvm.sh && npm config set prefix /var/lib/openbao/.npm-global && npm install -g yarn'
@@ -71,10 +76,25 @@ clone_and_build_openbao() {
     # Remove conflicting settings from .npmrc
     sudo -u openbao -H bash -c 'echo "" > /var/lib/openbao/.npmrc'
 
-    sudo -u openbao -H bash -c 'source /var/lib/openbao/.profile && cd /var/lib/openbao/src/github.com/openbao/openbao && export NVM_DIR="/var/lib/openbao/.nvm" && source $NVM_DIR/nvm.sh && nvm use --delete-prefix v22.3.0 --silent && export NODE_OPTIONS="--max_old_space_size=4096" && make bootstrap > make_bootstrap.log 2>&1'
+    sudo -u openbao -H bash -c '
+        source /var/lib/openbao/.profile
+        cd /var/lib/openbao/src/github.com/openbao/openbao
+        export NVM_DIR="/var/lib/openbao/.nvm"
+        source $NVM_DIR/nvm.sh
+        nvm use --delete-prefix $(nvm ls-remote | grep -Eo "v[0-9]+\.[0-9]+\.[0-9]+" | tail -1) --silent
+        export NODE_OPTIONS="--max_old_space_size=4096"
+        make bootstrap > make_bootstrap.log 2>&1
+    '
 
     # Step 7: Build static assets
-    sudo -u openbao -H bash -c 'source /var/lib/openbao/.profile && cd /var/lib/openbao/src/github.com/openbao/openbao && export NVM_DIR="/var/lib/openbao/.nvm" && source $NVM_DIR/nvm.sh && nvm use --delete-prefix v22.3.0 --silent && make static-dist dev-ui > make_static_dist.log 2>&1'
+    sudo -u openbao -H bash -c '
+        source /var/lib/openbao/.profile
+        cd /var/lib/openbao/src/github.com/openbao/openbao
+        export NVM_DIR="/var/lib/openbao/.nvm"
+        source $NVM_DIR/nvm.sh
+        nvm use --delete-prefix $(nvm ls-remote | grep -Eo "v[0-9]+\.[0-9]+\.[0-9]+" | tail -1) --silent
+        make static-dist dev-ui > make_static_dist.log 2>&1
+    '
 
     # Step 8: Move the binary to the system path
     if [ -f /var/lib/openbao/src/github.com/openbao/openbao/bin/bao ]; then
@@ -85,8 +105,7 @@ clone_and_build_openbao() {
     fi
 
     # Step 9: Verify OpenBao installation
-    if ! command -v openbao &> /dev/null
-    then
+    if ! command -v openbao &> /dev/null; then
         echo "openbao could not be found"
         exit 1
     fi
@@ -172,9 +191,10 @@ initialize_and_unseal_openbao() {
 
     # Step 15: Start OpenBao with the Configuration File
     echo "Starting OpenBao server..."
-    sudo -u openbao -H bash -c 'nohup openbao server -config /var/lib/openbao/config/config.hcl > /var/lib/openbao/openbao.log 2>&1 &' 
+    sudo -u openbao -H bash -c 'nohup openbao server -config /var/lib/openbao/config/config.hcl > /var/lib/openbao/openbao.log 2>&1 &'
 
     sleep 10  # Ensure the server has time to start
+
     echo "Wait 10 seconds to make sure that the openbao server has time to start"
 
     # Check if OpenBao server is running
@@ -200,7 +220,7 @@ initialize_and_unseal_openbao() {
     echo "Your token:"
     sudo cat /root/token.txt
 
-    # Prepare unseal keys for encryption as adrian user
+    # Prepare unseal keys for encryption as openbao user
     UNSEAL_KEY_1=$(echo "$UNSEAL_KEYS" | sed -n '1p')
     UNSEAL_KEY_2=$(echo "$UNSEAL_KEYS" | sed -n '2p')
     UNSEAL_KEY_3=$(echo "$UNSEAL_KEYS" | sed -n '3p')
@@ -263,11 +283,6 @@ UNSEAL_KEYS_ARRAY=($(echo "$UNSEAL_KEYS"))
 # Unseal OpenBao
 for key in "${UNSEAL_KEYS_ARRAY[@]}"; do
   curl -k --request POST --data "{\"key\": \"$key\"}" https://<IP address or URL>:8200/v1/sys/unseal # >> $LOGFILE 2>&1
-  #if [ $? -ne 0 ]; then
-  #  echo "Failed to unseal with key $key at $(date)" >> $LOGFILE
-  #  exit 1
-  #fi
-  #echo "Successfully used unseal key $key at $(date)" >> $LOGFILE
 done
 
 echo "OpenBao unsealed successfully at $(date)" >> $LOGFILE
@@ -276,9 +291,9 @@ chmod +x /usr/local/bin/unseal_openbao.sh
 }
 
 create_env_file() {
-# Create environment file for OpenBao
-sudo mkdir -p /etc/openbao.d
-cat << 'EOF' | sudo tee /etc/openbao.d/openbao.env
+    # Create environment file for OpenBao
+    sudo mkdir -p /etc/openbao.d
+    cat << 'EOF' | sudo tee /etc/openbao.d/openbao.env
 VAULT_ADDR=https://<IP address or URL>:8200
 DBUS_SESSION_BUS_ADDRESS=$XDG_RUNTIME_DIR/bus
 EOF
