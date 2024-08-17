@@ -16,13 +16,13 @@ create_user_and_setup() {
         sudo useradd --system --home /var/lib/openbao --shell /bin/bash --user-group openbao
     fi
 
-    # Check if /var/lib/openbao directory exists, if not, create it
+# Check if /var/lib/openbao directory exists, if not, create it
     if [ ! -d /var/lib/openbao ]; then
         sudo mkdir -p /var/lib/openbao
         sudo chown openbao:openbao /var/lib/openbao
     fi
 
-    # Ensure .bashrc and .profile are copied from /etc/skel
+# Ensure .bashrc and .profile are copied from /etc/skel
     for file in .bashrc .profile; do
         if [ ! -f /var/lib/openbao/$file ]; then
             sudo cp /etc/skel/$file /var/lib/openbao/$file
