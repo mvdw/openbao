@@ -32,7 +32,7 @@ create_user_and_setup() {
 }
 
 install_go() {
-    # Step 1: Install Go
+# Step 1: Install Go
     wget https://go.dev/dl/go1.22.4.linux-amd64.tar.gz
     sudo tar -C /usr/local -xzf go1.22.4.linux-amd64.tar.gz
     echo "export PATH=\$PATH:/usr/local/go/bin" | sudo tee -a /var/lib/openbao/.profile
@@ -40,14 +40,14 @@ install_go() {
 }
 
 install_dependencies() {
-    # Step 2: Install OpenBao dependencies
+# Step 2: Install OpenBao dependencies
     sudo mkdir -p /var/lib/openbao/.nvm
     sudo chown -R openbao:openbao /var/lib/openbao
     sudo apt install -y git make curl gnupg2
 }
 
 install_nvm_node_yarn() {
-    # Step 3: Install NVM and Node.js for the openbao user
+# Step 3: Install NVM and Node.js for the openbao user
     sudo -u openbao -H bash -c '
         export NVM_DIR="/var/lib/openbao/.nvm"
         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
@@ -56,13 +56,13 @@ install_nvm_node_yarn() {
         nvm install "$latest_node"
     '
 
-    # Step 4: Install yarn for the openbao user in /var/lib/openbao
-    sudo -u openbao -H bash -c 'export NVM_DIR="/var/lib/openbao/.nvm" && cd /var/lib/openbao && source $NVM_DIR/nvm.sh && npm config set prefix /var/lib/openbao/.npm-global && npm install -g yarn'
-    sudo -u openbao -H bash -c 'echo "export PATH=/var/lib/openbao/.npm-global/bin:\$PATH" >> /var/lib/openbao/.profile'
+# Step 4: Install yarn for the openbao user in /var/lib/openbao
+sudo -u openbao -H bash -c 'export NVM_DIR="/var/lib/openbao/.nvm" && cd /var/lib/openbao && source $NVM_DIR/nvm.sh && npm config set prefix /var/lib/openbao/.npm-global && npm install -g yarn'
+sudo -u openbao -H bash -c 'echo "export PATH=/var/lib/openbao/.npm-global/bin:\$PATH" >> /var/lib/openbao/.profile'
 }
 
 clone_and_build_openbao() {
-    # Step 5: Clone and build OpenBao
+# Step 5: Clone and build OpenBao
     sudo mkdir -p /var/lib/openbao/src/github.com/openbao
     sudo chown -R openbao:openbao /var/lib/openbao/src/github.com
     cd /var/lib/openbao/src/github.com/openbao
@@ -72,8 +72,8 @@ clone_and_build_openbao() {
     cd openbao
     sudo chown -R openbao:openbao /var/lib/openbao/src/github.com/openbao/openbao
 
-    # Step 6: Ensure proper environment variables are set
-    # Remove conflicting settings from .npmrc
+# Step 6: Ensure proper environment variables are set
+# Remove conflicting settings from .npmrc
     sudo -u openbao -H bash -c 'echo "" > /var/lib/openbao/.npmrc'
 
     sudo -u openbao -H bash -c '
