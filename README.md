@@ -35,13 +35,13 @@ sed -i 's|<IP address or URL>|10.10.0.126|g' openbao.sh
 Make the file executable:
 
 ```bash
-chmod +x bao.sh
+chmod +x openbao.sh
 ```
 
 Run the script with sudo:
 
 ```bash
-sudo ./bao.sh
+sudo ./openbao.sh
 ```
 
 The script handles all the steps detailed below. However, if you prefer to understand each step or run them manually, follow the detailed guide.
