@@ -2,7 +2,8 @@
 
 #### Prerequisites
 
-Ensure you have root privileges before starting the installation.
+Start with a fresh install of Debian 12.
+Ensure you are logged in as root before starting the installation.
 
 #### Automated Installation Script
 
