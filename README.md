@@ -16,9 +16,7 @@ To automate the installation and configuration of OpenBao, use the provided scri
 5. Clones and builds the OpenBao repository.
 6. Configures OpenBao.
 7. Generates SSL certificates.
-8. Initializes and un
-
-seals OpenBao.
+8. Initializes and unseals OpenBao.
 9. Creates necessary systemd services.
 
 Download and run the script as root:
