@@ -7,7 +7,7 @@ Ensure you are logged in as root before starting the installation.
 
 #### Automated Installation Script
 
-To automate the installation and configuration of OpenBao, use the provided script `bao.sh`. This script handles the following:
+To automate the installation and configuration of OpenBao, use the provided script `openbao.sh`. This script handles the following:
 
 1. Creates a system user and group for OpenBao.
 2. Installs Go.
