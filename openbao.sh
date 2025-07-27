@@ -35,7 +35,7 @@ create_user_and_setup() {
 install_go() {
     # Step 1: Install Go
     wget https://go.dev/dl/go1.22.4.linux-amd64.tar.gz
-    tar -C /usr/local -xzf go1.22.4.linux-amd64.tar.gz
+    rm -rf /usr/local/go && tar -C /usr/local -xzf go1.24.5.linux-amd64.tar.gz
     echo "export PATH=\$PATH:/usr/local/go/bin" | tee -a /var/lib/openbao/.profile
     chown -R openbao:openbao /var/lib/openbao
 }
