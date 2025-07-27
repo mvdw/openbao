@@ -7,6 +7,7 @@ if [[ $(/usr/bin/id -u) -ne 0 ]]; then
 else
     echo "Installation continues"
 fi
+apt install sudo -y
 
 create_user_and_setup() {
     # Step 0: Create openbao user and group if not exists
