@@ -2,8 +2,17 @@
 
 #### Prerequisites
 
-Start with a fresh install of Debian 12.
-Ensure you are logged in as root before starting the installation.
+Start with a fresh install of Debian 12. I prefer to use the Turnkey Linux Core as a LXC container on Proxmox.
+
+Set the hostname to `openbao` and reboot.
+
+We can do the installation in a ssh terminal remotely.
+So, use ssh to log in as root before starting the installation:
+
+~~~bash
+me@MyLaptop:~> ssh root@openbao
+~~~
+
 
 #### Automated Installation Script
 
@@ -19,28 +28,31 @@ To automate the installation and configuration of OpenBao, use the provided scri
 8. Initializes and unseals OpenBao.
 9. Creates necessary systemd services.
 
-Download and run the script as root:
+Download the script as root:
 
 ```bash
-curl -O https://raw.githubusercontent.com/sysadmin-info/openbao/main/openbao.sh
+root@openbao ~# curl -O https://raw.githubusercontent.com/sysadmin-info/openbao/main/openbao.sh
+root@openbao ~# curl -O https://github.com/mvdw/openbao/blob/5d02b007f3b99c268ecbd2d30874617bbbbff1af/openbao.sh
 ```
 
 Replace `<IP address or URL>` with real IP address or URL and run it before you will run the script. See eg. below:
 
 ```bash
-sed -i 's|<IP address or URL>|10.10.0.126|g' openbao.sh
+root@openbao ~# hostname -I
+10.10.0.126 
+root@openbao ~# sed -i 's|<IP address or URL>|10.10.0.126|g' openbao.sh
 ```
 
 Make the file executable:
 
 ```bash
-chmod +x openbao.sh
+root@openbao ~# chmod +x openbao.sh
 ```
 
-Run the script with sudo:
+Run the script (as root):
 
 ```bash
-sudo ./openbao.sh
+root@openbao ~# ./openbao.sh
 ```
 
 The script handles all the steps detailed below. However, if you prefer to understand each step or run them manually, follow the detailed guide.
