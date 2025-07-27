@@ -32,7 +32,7 @@ Download the script as root:
 
 ```bash
 root@openbao ~# curl -O https://raw.githubusercontent.com/sysadmin-info/openbao/main/openbao.sh
-root@openbao ~# curl -O https://github.com/mvdw/openbao/blob/5d02b007f3b99c268ecbd2d30874617bbbbff1af/openbao.sh
+root@openbao ~# curl -O https://raw.githubusercontent.com/mvdw/openbao/d77ed098ca372b09872f0f1581e6fbfd3a423504/openbao.sh
 ```
 
 Replace `<IP address or URL>` with real IP address or URL and run it before you will run the script. See eg. below:
