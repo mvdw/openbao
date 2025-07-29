@@ -7,7 +7,7 @@ if [[ $(/usr/bin/id -u) -ne 0 ]]; then
 else
     echo "Installation continues"
 fi
-apt install sudo -y
+apt install -y sudo
 
 create_user_and_setup() {
     # Step 0: Create openbao user and group if not exists
@@ -34,7 +34,7 @@ create_user_and_setup() {
 
 install_go() {
     # Step 1: Install Go
-    wget https://go.dev/dl/go1.22.4.linux-amd64.tar.gz
+    wget https://go.dev/dl/go1.24.5.linux-amd64.tar.gz
     rm -rf /usr/local/go && tar -C /usr/local -xzf go1.24.5.linux-amd64.tar.gz
     echo "export PATH=\$PATH:/usr/local/go/bin" | tee -a /var/lib/openbao/.profile
     chown -R openbao:openbao /var/lib/openbao
@@ -49,7 +49,7 @@ install_dependencies() {
 
 install_nvm_node_yarn() {
     # Step 3: Install NVM and Node.js for the openbao user
-    su - openbao -c '
+    sudo -u openbao -H bash -c '
         export NVM_DIR="/var/lib/openbao/.nvm"
         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
         source $NVM_DIR/nvm.sh
@@ -58,8 +58,8 @@ install_nvm_node_yarn() {
     '
 
     # Step 4: Install yarn for the openbao user in /var/lib/openbao
-    su - openbao -c 'export NVM_DIR="/var/lib/openbao/.nvm" && cd /var/lib/openbao && source $NVM_DIR/nvm.sh && npm config set prefix /var/lib/openbao/.npm-global && npm install -g yarn'
-    su - openbao -c 'echo "export PATH=/var/lib/openbao/.npm-global/bin:\$PATH" >> /var/lib/openbao/.profile'
+    sudo -u openbao -H bash -c 'export NVM_DIR="/var/lib/openbao/.nvm" && cd /var/lib/openbao && source $NVM_DIR/nvm.sh && npm config set prefix /var/lib/openbao/.npm-global && npm install -g yarn'
+    sudo -u openbao -H bash -c 'echo "export PATH=/var/lib/openbao/.npm-global/bin:\$PATH" >> /var/lib/openbao/.profile'
 }
 
 clone_and_build_openbao() {
@@ -75,9 +75,9 @@ clone_and_build_openbao() {
 
     # Step 6: Ensure proper environment variables are set
     # Remove conflicting settings from .npmrc
-    su - openbao -c 'echo "" > /var/lib/openbao/.npmrc'
+    sudo -u openbao -H bash -c 'echo "" > /var/lib/openbao/.npmrc'
 
-    su - openbao -c '
+    sudo -u openbao -H bash -c '
         source /var/lib/openbao/.profile
         cd /var/lib/openbao/src/github.com/openbao/openbao
         export NVM_DIR="/var/lib/openbao/.nvm"
@@ -88,7 +88,7 @@ clone_and_build_openbao() {
     '
 
     # Step 7: Build static assets
-    su - openbao -c '
+    sudo -u openbao -H bash -c '
         source /var/lib/openbao/.profile
         cd /var/lib/openbao/src/github.com/openbao/openbao
         export NVM_DIR="/var/lib/openbao/.nvm"

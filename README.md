@@ -3,6 +3,7 @@
 #### Prerequisites
 
 Start with a fresh install of Debian 12. I prefer to use the Turnkey Linux Core as a LXC container on Proxmox.
+A root disk size of 8GiB is NOT enough for building openBao!
 
 Set the hostname to `openbao` and reboot.
 
@@ -32,7 +33,7 @@ Download the script as root:
 
 ```bash
 root@openbao ~# curl -O https://raw.githubusercontent.com/sysadmin-info/openbao/main/openbao.sh
-root@openbao ~# curl -O https://raw.githubusercontent.com/mvdw/openbao/d77ed098ca372b09872f0f1581e6fbfd3a423504/openbao.sh
+root@openbao ~# curl -O https://raw.githubusercontent.com/mvdw/openbao/main/openbao.sh
 ```
 
 Replace `<IP address or URL>` with real IP address or URL and run it before you will run the script. See eg. below:
@@ -68,8 +69,8 @@ The script will check if the `openbao` user exists and create it if necessary. I
 1. **Download and install Go**:
 
     ```bash
-    wget https://go.dev/dl/go1.22.4.linux-amd64.tar.gz
-    sudo tar -C /usr/local -xzf go1.22.4.linux-amd64.tar.gz
+    wget https://go.dev/dl/go1.24.5.linux-amd64.tar.gz
+    sudo tar -C /usr/local -xzf go1.24.5.linux-amd64.tar.gz
     sudo mkdir -p /var/lib/openbao
     sudo touch /var/lib/openbao/.profile
     echo "export PATH=\$PATH:/usr/local/go/bin" | sudo tee -a /var/lib/openbao/.profile
@@ -106,11 +107,37 @@ The script will check if the `openbao` user exists and create it if necessary. I
 
 2. **Build OpenBao**:
 
-    ```bash
-    sudo -u openbao -H bash -c 'source /var/lib/openbao/.profile && cd /var/lib/openbao/src/github.com/openbao/openbao && export NVM_DIR="/var/lib/openbao/.nvm" && source $NVM_DIR/nvm.sh && nvm use --delete-prefix v22.3.0 --silent && export NODE_OPTIONS="--max_old_space_size=4096" && make bootstrap'
-    sudo -u openbao -H bash -c 'source /var/lib/openbao/.profile && cd /var/lib/openbao/src/github.com/openbao/openbao && export NVM_DIR="/var/lib/openbao/.nvm" && source $NVM_DIR/nvm.sh && nvm use --delete-prefix v22.3.0 --silent && make static-dist dev-ui'
-    sudo mv /var/lib/openbao/src/github.com/openbao/openbao/bin/bao /usr/local/bin/openbao
-    ```
+```bash
+sudo -u openbao -H bash -c 'source /var/lib/openbao/.profile && cd /var/lib/openbao/src/github.com/openbao/openbao && export NVM_DIR="/var/lib/openbao/.nvm" && source $NVM_DIR/nvm.sh && nvm use --delete-prefix v22.3.0 --silent && export NODE_OPTIONS="--max_old_space_size=4096" && make bootstrap'
+sudo -u openbao -H bash -c 'source /var/lib/openbao/.profile && cd /var/lib/openbao/src/github.com/openbao/openbao && export NVM_DIR="/var/lib/openbao/.nvm" && source $NVM_DIR/nvm.sh && nvm use --delete-prefix v22.3.0 --silent && make static-dist dev-ui'
+sudo mv /var/lib/openbao/src/github.com/openbao/openbao/bin/bao /usr/local/bin/openbao
+```
+
+The above fails with `make_static_dist.log` containing:
+
+```
+--> Installing JavaScript assets
+➤ YN0000: ┌ Resolution step
+➤ YN0002: │ @ember-data/private-build-infra@npm:4.5.0 doesn't provide @babel/core (pf6ec5), requested by @babel/plugin-transform-block-scoping
+➤ YN0002: │ @ember-data/private-build-infra@npm:4.5.0 doesn't provide @babel/core (pc1c2f), requested by babel-plugin-debug-macros
+➤ YN0002: │ @glimmer/vm-babel-plugins@npm:0.83.1 doesn't provide @babel/core (pf187a), requested by babel-plugin-debug-macros
+➤ YN0002: │ @hashicorp/design-system-components@npm:2.3.1 doesn't provide ember-source (p73c5c), requested by @ember/render-modifiers
+➤ YN0002: │ decorator-transforms@npm:1.2.1 doesn't provide @babel/core (pcf3f0), requested by @babel/plugin-syntax-decorators
+...
+Some peer dependencies are incorrectly met; run yarn explain peer-requirements <hash> for details, where <hash> is the six-letter p-prefixed code
+```
+And the yarn explain gives:
+~~~bash
+openbao@openbao ~/.../openbao/openbao$ yarn explain peer-requirements pf6ec5
+yarn run v1.22.22
+error Couldn't find a package.json file in "/var/lib/openbao/src/github.com/openbao/openbao"
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
+openbao@openbao ~/.../openbao/openbao$ 
+~~~
+
+
+
+
 
 #### Step 5: Configure OpenBao
 
